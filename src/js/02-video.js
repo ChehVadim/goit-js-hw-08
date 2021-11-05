@@ -1,25 +1,31 @@
-var throttle = require('lodash.throttle');
-var iframe = document.querySelector('iframe');
-var player = new Vimeo.Player(iframe);
-    
-const lastSavedTime = localStorage.getItem("videoplayer-current-time");
-console.log(lastSavedTime);
+// Инициализируй плеер (добавленный как npm пакет) в файле скрипта
+import Player from '@vimeo/player';
+import throttle from 'lodash.throttle';
 
-player.setCurrentTime(lastSavedTime).then(function(seconds) {
-    // seconds = the actual time that the player seeked to
-}).catch(function(error) {
-    switch (error.name) {
-        case 'RangeError':
-            // the time was less than 0 or greater than the video’s duration
-            break;
+const iframe = document.querySelector('iframe');
+const player = new Vimeo.Player(iframe);
 
-        default:
-            // some other error occurred
-            break;
-    }
-});
 
-player.on('timeupdate', throttle(function (timeObj) {
-    localStorage.setItem("videoplayer-current-time", JSON.stringify(timeObj.seconds));
-    // console.log("timeUpdateFunc:", timeObj.seconds);  
-}, 1000));
+
+// Сохраняем время воспроизведения в локальное хранилище.
+const storageTime = 'videoplayer-current-time';
+
+
+// Отслеживаем событие timeupdate - обновление времени воспроизведения.
+
+player.on('play', onPlay);
+player.on('seeked', onTimeUpdate);
+player.on('timeupdate', throttle(onTimeUpdate, 500));
+
+function onPlay () {
+    player.setCurrentTime(localStorage.getItem(storageTime));
+};
+
+function onTimeUpdate () {
+    player.getCurrentTime().then(seconds => localStorage.setItem(storageTime, seconds));
+}
+
+console.log(localStorage);
+
+
+

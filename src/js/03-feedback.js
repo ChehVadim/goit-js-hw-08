@@ -1,32 +1,55 @@
-var throttle = require('lodash.throttle');
-const feedbackForm = document.querySelector(".feedback-form");
+import throttle from 'lodash.throttle';
 
-const savedFormDataJSON = localStorage.getItem("feedback-form-state");
-const savedFormData = JSON.parse(savedFormDataJSON);
+const refs = {
+    feedbackForm: document.querySelector('.feedback-form'),
+    inputEmail: document.querySelector("input"),
+    inputMessage: document.querySelector("textarea"),
+    userSubmit: document.querySelector("button"),
+}
 
-if (savedFormData !== null) {
-    feedbackForm["email"].value = savedFormData.email;
-    feedbackForm["message"].value = savedFormData.message;
-};
 
-feedbackForm.addEventListener("input", throttle(event => {
+const storage = 'feedback-form-state';
+const userData = {};
 
-    const formData = { email: `${feedbackForm["email"].value}`, message: `${feedbackForm["message"].value}` };
-    const formDataJSON = JSON.stringify(formData);
 
-    localStorage.setItem("feedback-form-state", formDataJSON);
+// Перевіряємо наявність даних у сховищі, заповнюємо форму
 
-}, 500));
+if (localStorage[storage]) {
 
-feedbackForm.addEventListener("submit", event => {
+    const userLocalData = JSON.parse(localStorage[storage]);
+
+    refs.inputEmail.value = userLocalData.email;
+    refs.inputMessage.value = userLocalData.message;
+}
+
+// Записуємо вхідні дані з input в сховище з затримкою
+
+refs.feedbackForm.addEventListener('input', throttle(onFormInput, 500));
+
+function onFormInput(event) {
+    const formData = new FormData(refs.feedbackForm);
+
+    formData.forEach((value, name) => {
+
+        userData[name] = value;
+        localStorage.setItem(storage, JSON.stringify(userData));
+
+    });
+}
+
+// При сабміті виводимо дані в консоль і очищуємо сховище та форму
+
+refs.feedbackForm.addEventListener('submit', onFormSubmit);
+
+function onFormSubmit(event) {
+
     event.preventDefault();
-    
-    const formData = { email: `${feedbackForm["email"].value}`, message: `${feedbackForm["message"].value}` };
-    console.log(formData);
 
-    //remove data from localStorage and feedback-form
-    localStorage.removeItem("feedback-form-state");
-    feedbackForm["email"].value = "";
-    feedbackForm["message"].value = "";
+    const userLocalData = JSON.parse(localStorage[storage]);
+    console.log(userLocalData);
 
-});
+    localStorage.clear();
+
+    refs.inputEmail.value = "";
+    refs.inputMessage.value = "";
+}
